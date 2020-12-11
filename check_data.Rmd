@@ -1,0 +1,132 @@
+---
+title: "DM1"
+author: "Cong Bang Huynh"
+date: "12/11/2020"
+output: word_document
+---
+
+
+```{r}
+#devtools::install_github("clepadellec/ClustersAnalysis")
+```
+
+```{r}
+library(ClustersAnalysis)
+```
+
+
+
+
+
+```{r}
+library(openxlsx)
+```
+
+```{r}
+df=read.csv('C:/Users/DELL/Desktop/Master SISE/Github/DataMining/Train_data.csv')
+```
+
+
+
+```{r}
+head(df,10)
+```
+
+
+
+```{r}
+df_not_class=df[,-42]
+head(df_not_class)
+```
+
+###### variable qualitative #########
+
+
+```{r}
+var_quanti=sapply(df_not_class, function(x) is.factor(x)| is.character(x)|length(unique(x))<50)
+
+```
+
+```{r}
+var=var_quanti==FALSE
+```
+
+
+
+```{r}
+df_not_class_quanti=df_not_class[,var]
+```
+
+
+```{r}
+head(df_not_class_quanti,10)
+```
+
+```{r}
+data=cbind(df_not_class_quanti,df$class)
+```
+
+
+```{r}
+head(data,10)
+```
+
+######################## Test ###########################################################
+
+
+```{r}
+object=multivariate_object(data,22)
+```
+
+```{r}
+m_test.value(object = object,i=1)
+```
+
+#les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais
+
+
+```{r}
+m_test.value(object = object,i=2)
+```
+
+# les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais:
+
+```{r}
+data_final=data[,-c(2,3,5)]
+```
+
+```{r}
+object=multivariate_object(data_final,19)
+```
+
+
+
+# Rapport de correlation
+
+```{r}
+### R^2
+
+m_R2_multivariate(object, rescale = TRUE)
+
+
+```
+
+```{r}
+colnames(data_final)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
