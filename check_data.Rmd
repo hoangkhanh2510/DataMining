@@ -111,8 +111,26 @@ m_R2_multivariate(object, rescale = TRUE)
 
 ```
 
+
+
+
+
 ```{r}
 colnames(data_final)
+```
+
+
+# fisher test
+
+
+```{r}
+u_object=Univariate_object(data_final,19)
+```
+
+
+
+```{r}
+u_fisher_test_all(u_object)
 ```
 
 
@@ -120,9 +138,14 @@ colnames(data_final)
 
 
 
+# Le nombre des valeurs differentes pour chaque colonne
 
-
-
+```{r}
+for (i in 1:18){
+  a=length(unique(data_final[,i]))
+  print(paste(colnames(data_final[i]), a))
+}
+```
 
 
 
