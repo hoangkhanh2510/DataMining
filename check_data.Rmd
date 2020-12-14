@@ -20,6 +20,7 @@ library(ClustersAnalysis)
 
 ```{r}
 library(openxlsx)
+library(ClustersAnalysis)
 ```
 
 ```{r}
@@ -146,6 +147,149 @@ for (i in 1:18){
   print(paste(colnames(data_final[i]), a))
 }
 ```
+
+
+
+#################### TEST AVEC ARBRE DE DECISION ################################################
+#TEST AVEC ARBRE DE DECISION
+
+##Séparer en train-test (0.75-0.25)
+
+```{r}
+colnames(data_final)[19]='class'
+```
+
+
+```{r}
+n=nrow(data_final)
+ind_test=sample(1:n, n*0.25, replace = FALSE, prob = NULL)
+data_train=data_final[-ind_test,]
+data_test=data_final[ind_test,]
+```
+
+
+
+```{r}
+head(data_train)
+```
+
+
+
+
+##Lancer Arbre de decision
+
+```{r}
+library(rpart)
+data_train_arbre=rpart(class~.,data=data_train, method = "class")
+plot(data_train_arbre)
+text(data_train_arbre)
+
+```
+
+```{r}
+library(rpart.plot)
+
+rpart.plot(data_train_arbre)
+```
+
+## Predire avec arbre de decision
+
+
+
+```{r}
+predict=predict(data_train_arbre, data_test,"class")
+```
+
+
+## Calculer les metriques
+
+```{r}
+# Matrice de confusion
+
+conf1=table(data_test$class,predict)
+print(conf1)
+
+# Taux d'erreur
+
+print(1-sum(diag(conf1))/sum(conf1))
+
+# Taux rappel
+
+print(conf1[2,2]/sum(conf1["normal",]))
+
+# Taux precision
+
+print(conf1[2,2]/sum(conf1[,"normal"]))
+```
+
+
+## tuning les hyperparametres
+
+```{r}
+para=rpart.control(minsplit =10, minbucket = 2)
+data_train_arbre2=rpart(class~., data_train, method = "class", control = para)
+
+#print(DFApp_arb2)
+
+rpart.plot(data_train_arbre2)
+
+predict2=predict(data_train_arbre2, data_test, type="class")
+```
+
+
+```{r}
+# Matrice de confusion
+
+conf2=table(data_test$class,predict2)
+print(conf2)
+
+# Taux d'erreur
+
+print(1-sum(diag(conf2))/sum(conf2))
+
+# Taux rappel
+
+print(conf2[2,2]/sum(conf2["normal",]))
+
+# Taux precision
+
+print(conf2[2,2]/sum(conf2[,"normal"]))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
