@@ -150,7 +150,7 @@ for (i in 1:18){
 
 
 
-#################### TEST AVEC ARBRE DE DECISION ################################################
+#################### TEST AVEC ARBRE DE DECISION (PAS ENCORE CV) ################################################
 #TEST AVEC ARBRE DE DECISION
 
 ##Séparer en train-test (0.75-0.25)
@@ -258,29 +258,114 @@ print(conf2[2,2]/sum(conf2[,"normal"]))
 ```
 
 
+#################### TEST AVEC METHODE D"ENSEMBLE(PAS ENCORE CV) ################################################
 
 
 
 
+```{r}
+library(ipred)
+```
+
+```{r}
+data_ensemble=data_train[,]
+data_ensemble$class=as.factor(data_train$class)
+```
 
 
 
+```{r}
+set.seed(10)
+
+data_train_ensemble <- bagging(class ~ ., data = data_ensemble, coob = TRUE, nbagg=55)
+
+print(data_train_ensemble)
+```
+
+
+```{r}
+predict_ensemble=predict(data_train_ensemble, data_test, type='class')
+```
 
 
 
+```{r}
+# Matrice de confusion
+
+conf3=table(data_test$class,predict_ensemble)
+print(conf3)
+
+# Taux d'erreur
+
+print(1-sum(diag(conf3))/sum(conf3))
+
+# Taux rappel
+
+print(conf3[2,2]/sum(conf3["normal",]))
+
+# Taux precision
+
+print(conf3[2,2]/sum(conf3[,"normal"]))
+
+```
+
+```{r}
+# Aire de ROC curve
+
+#library(Metrics)
+predict_ensemble_proba=predict(data_train_ensemble, data_test, type='prob')
+auc(actual = ifelse(data_test$class== "normal", 1, 0), predicted = predict_ensemble_proba[,"normal"]) 
+
+```
+
+#################### TEST AVEC METHODE D"ENSEMBLE(AVEC CV) ################################################
+
+
+```{r}
+library(caret)
+```
+
+
+```{r}
+# Train avec CV
+CV=trainControl(method = "cv", number = 5, classProbs = TRUE, summaryFunction = twoClassSummary)
+data_ensemble_caret = train(class ~ ., data = data_ensemble, method = "treebag", metric = "ROC", trControl = CV)
+print(data_ensemble_caret$results[,"ROC"])
+```
+
+```{r}
+# Predire sur l'ensemble Test
+predict_ensemble_proba_caret=predict(data_ensemble_caret, data_test, type='prob')
+auc(actual = ifelse(data_test$class== "normal", 1, 0), predicted = predict_ensemble_proba_caret[,"normal"]) 
+```
 
 
 
+```{r}
+predict_ensemble_caret=predict(data_ensemble_caret, data_test, type='raw')
+```
 
 
 
+```{r}
+# Matrice de confusion
 
+conf4=table(data_test$class,predict_ensemble_caret)
+print(conf4)
 
+# Taux d'erreur
 
+print(1-sum(diag(conf4))/sum(conf4))
 
+# Taux rappel
 
+print(conf4[2,2]/sum(conf4["normal",]))
 
+# Taux precision
 
+print(conf4[2,2]/sum(conf4[,"normal"]))
+
+```
 
 
 
