@@ -10,18 +10,20 @@ output: word_document
 #devtools::install_github("clepadellec/ClustersAnalysis")
 ```
 
-```{r}
-library(ClustersAnalysis)
-```
-
-
-
-
 
 ```{r}
+library(e1071)
+library(Metrics)
+library(caret)
 library(openxlsx)
 library(ClustersAnalysis)
+library(rpart)
+library(rpart.plot)
+
 ```
+
+
+
 
 ```{r}
 df=read.csv('C:/Users/DELL/Desktop/Master SISE/Github/DataMining/Train_data.csv')
@@ -371,11 +373,6 @@ auc(actual = ifelse(data_test$class== "normal", 1, 0), predicted = predict_ensem
 
 
 ```{r}
-library(caret)
-```
-
-
-```{r}
 # Train avec CV
 CV=trainControl(method = "cv", number = 5, classProbs = TRUE, summaryFunction = twoClassSummary)
 data_ensemble_caret = train(class ~ ., data = data_ensemble, method = "treebag", metric = "ROC", trControl = CV)
@@ -397,34 +394,14 @@ predict_ensemble_caret=predict(data_ensemble_caret, data_test, type='raw')
 
 
 ```{r}
-# Matrice de confusion
-
-conf4=table(data_test$class,predict_ensemble_caret)
-print(conf4)
-
-# Taux d'erreur
-
-print(1-sum(diag(conf4))/sum(conf4))
-
-# Taux rappel
-
-print(conf4[2,2]/sum(conf4["normal",]))
-
-# Taux precision
-
-print(conf4[2,2]/sum(conf4[,"normal"]))
-
+#matrice de confusion en utilisant caret
+confusionMatrix(data=predict_ensemble_caret,as.factor(data_test$class), positive = 'normal')
 ```
-
-
 
 
 ###################################SVM####################################################################
 
 
-```{r}
-library(e1071)
-```
 
 # Validation croise sur l'ensemble de l'apprentissage et tester sur le test
 
@@ -449,23 +426,8 @@ predict_svm=predict(svm_fit, data_test, type='raw')
 
 
 ```{r}
-# Matrice de confusion
-
-conf4=table(data_test$class,predict_svm)
-print(conf4)
-
-# Taux d'erreur
-
-print(1-sum(diag(conf4))/sum(conf4))
-
-# Taux rappel 
-
-print(conf4[2,2]/sum(conf4["normal",]))
-
-# Taux precision
-
-print(conf4[2,2]/sum(conf4[,"normal"]))
-
+#matrice de confusion en utilisant caret
+confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal')
 ```
 
 
@@ -474,43 +436,25 @@ print(conf4[2,2]/sum(conf4[,"normal"]))
 
 
 ```{r}
-c_seq = c (1 ,10 ,50)
-eps_seq = c (0.05 ,0.1 ,0.5)
-kernel = c("linear", 'polynomial','radial') 
-svm_grid_search = tune ( method = svm , class ~. ,
-data =data_svm , ranges = list ( epsilon = eps_seq , kernel=kernel, cost = c_seq ) )
-print (svm_grid_search)
+#c_seq = c (1 ,10 ,50)
+#eps_seq = c (0.05 ,0.1 ,0.5)
+#kernel = c("linear", 'polynomial','radial') 
+#svm_grid_search = tune ( method = svm , class ~. ,
+#data =data_svm , ranges = list ( epsilon = eps_seq , kernel=kernel, cost = c_seq ) )
+#print (svm_grid_search)
 #plot (svm_grid_search)
 
 ```
 
 ```{r}
-predict_svm=predict(svm_grid_search$best.model, data_test, type='raw')
+#predict_svm=predict(svm_grid_search$best.model, data_test, type='raw')
 ```
-
 
 
 ```{r}
-# Matrice de confusion
-
-conf4=table(data_test$class,predict_svm)
-print(conf4)
-
-# Taux d'erreur
-
-print(1-sum(diag(conf4))/sum(conf4))
-
-# Taux rappel 
-
-print(conf4[2,2]/sum(conf4["normal",]))
-
-# Taux precision
-
-print(conf4[2,2]/sum(conf4[,"normal"]))
-
+#matrice de confusion en utilisant caret
+confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal')
 ```
-
-
 
 
 
