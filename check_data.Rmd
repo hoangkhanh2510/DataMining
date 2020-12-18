@@ -150,6 +150,49 @@ for (i in 1:18){
 
 
 
+###################ACP########################################################################################
+
+
+
+
+```{r}
+#ACP + clustering sur l'apprentissage (data_train)
+m_data_train=multivariate_object(data_train,19)
+m_kmean_clustering_plot(m_data_train, interact = FALSE)
+```
+
+
+
+```{r}
+#ACP + clustering sur le test (data_test)
+m_data_test=multivariate_object(data_test,19)
+m_kmean_clustering_plot(m_data_train, interact = FALSE)
+```
+
+
+
+```{r}
+#ACP + clustering sur le test (data_test)
+m_data_total=multivariate_object(data_final,19)
+m_kmean_clustering_plot(m_data_total, interact = FALSE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #################### TEST AVEC ARBRE DE DECISION (PAS ENCORE CV) ################################################
 #TEST AVEC ARBRE DE DECISION
 
@@ -172,6 +215,7 @@ data_test=data_final[ind_test,]
 ```{r}
 head(data_train)
 ```
+
 
 
 
