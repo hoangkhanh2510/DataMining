@@ -148,6 +148,25 @@ for (i in 1:18){
 }
 ```
 
+##Séparer en train-test (0.75-0.25)
+
+```{r}
+colnames(data_final)[19]='class'
+```
+
+
+```{r}
+n=nrow(data_final)
+ind_test=sample(1:n, n*0.25, replace = FALSE, prob = NULL)
+data_train=data_final[-ind_test,]
+data_test=data_final[ind_test,]
+```
+
+
+
+
+
+
 
 
 ###################ACP########################################################################################
@@ -158,7 +177,7 @@ for (i in 1:18){
 ```{r}
 #ACP + clustering sur l'apprentissage (data_train)
 m_data_train=multivariate_object(data_train,19)
-m_kmean_clustering_plot(m_data_train, interact = FALSE)
+m_kmean_clustering_plot(m_data_train, interact = FALSE, rescale = TRUE)
 ```
 
 
@@ -174,7 +193,7 @@ m_kmean_clustering_plot(m_data_train, interact = FALSE)
 ```{r}
 #ACP + clustering sur le test (data_test)
 m_data_total=multivariate_object(data_final,19)
-m_kmean_clustering_plot(m_data_total, interact = FALSE)
+m_kmean_clustering_plot(m_data_total, interact = FALSE, i=1,j=2)
 
 ```
 
@@ -195,20 +214,6 @@ m_kmean_clustering_plot(m_data_total, interact = FALSE)
 
 #################### TEST AVEC ARBRE DE DECISION (PAS ENCORE CV) ################################################
 #TEST AVEC ARBRE DE DECISION
-
-##Séparer en train-test (0.75-0.25)
-
-```{r}
-colnames(data_final)[19]='class'
-```
-
-
-```{r}
-n=nrow(data_final)
-ind_test=sample(1:n, n*0.25, replace = FALSE, prob = NULL)
-data_train=data_final[-ind_test,]
-data_test=data_final[ind_test,]
-```
 
 
 
@@ -410,6 +415,120 @@ print(conf4[2,2]/sum(conf4["normal",]))
 print(conf4[2,2]/sum(conf4[,"normal"]))
 
 ```
+
+
+
+
+###################################SVM####################################################################
+
+
+```{r}
+library(e1071)
+```
+
+# Validation croise sur l'ensemble de l'apprentissage et tester sur le test
+
+
+```{r}
+data_svm=data_train[,]
+data_svm$class=as.factor(data_train$class)
+```
+
+
+
+
+```{r}
+svm_fit = svm (class ~. , data =data_svm, type ="C-classification", kernel ="radial" , cross =5)
+```
+
+
+```{r}
+predict_svm=predict(svm_fit, data_test, type='raw')
+```
+
+
+
+```{r}
+# Matrice de confusion
+
+conf4=table(data_test$class,predict_svm)
+print(conf4)
+
+# Taux d'erreur
+
+print(1-sum(diag(conf4))/sum(conf4))
+
+# Taux rappel 
+
+print(conf4[2,2]/sum(conf4["normal",]))
+
+# Taux precision
+
+print(conf4[2,2]/sum(conf4[,"normal"]))
+
+```
+
+
+# Optimisation des hyperparametres
+
+
+
+```{r}
+c_seq = c (1 ,10 ,50)
+eps_seq = c (0.05 ,0.1 ,0.5)
+kernel = c("linear", 'polynomial','radial') 
+svm_grid_search = tune ( method = svm , class ~. ,
+data =data_svm , ranges = list ( epsilon = eps_seq , kernel=kernel, cost = c_seq ) )
+print (svm_grid_search)
+#plot (svm_grid_search)
+
+```
+
+```{r}
+predict_svm=predict(svm_grid_search$best.model, data_test, type='raw')
+```
+
+
+
+```{r}
+# Matrice de confusion
+
+conf4=table(data_test$class,predict_svm)
+print(conf4)
+
+# Taux d'erreur
+
+print(1-sum(diag(conf4))/sum(conf4))
+
+# Taux rappel 
+
+print(conf4[2,2]/sum(conf4["normal",]))
+
+# Taux precision
+
+print(conf4[2,2]/sum(conf4[,"normal"]))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
