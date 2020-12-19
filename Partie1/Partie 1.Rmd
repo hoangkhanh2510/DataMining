@@ -1,0 +1,80 @@
+---
+title: "Partie 1"
+author: "Pauline Lainé"
+date: "18/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Partie 1 
+
+## Lecture et description des données
+#Question 2
+```{r}
+#Chargement des données
+setwd("D:/OneDrive/Documents/COURS/M2 SISE/Machine learning ah pine/Projet")
+D <- read.table("breast-cancer-wisconsin.data", sep = ",")
+```
+
+# Question 3
+```{r}
+class(D)
+str(D)
+head(D)
+summary(D)
+```
+
+## Séparation des données en "train" et "test"
+
+# Question 4
+```{r}
+#Modifider les "?" en NA
+D$V7[D$V7=="?"] <- NA
+#Vérifier si les lignes sont complète ou non 
+ok <- complete.cases(D)
+#Nombre de ligne avec valeurs manquantes
+sum(!ok)
+#Lignes avec valeurs manquantes
+D[!ok,]
+```
+
+#Question 5
+Pour avoir que des données complètes, on choisit de supprimé les individus avec des données manquantes 
+```{r}
+D <- D[ok,]
+```
+
+#Question 6 
+```{r}
+#Variables explicatives
+X <- D[,c(2:10)]
+#Variable cible
+y <- D[,11]
+```
+
+#Question 7
+```{r}
+#Recodage bégnime
+y[y==2] <- 0
+#Recodage maligne
+y[y==4] <- 1
+```
+
+#Question 8
+```{R}
+#Indice des benigne et maligne
+benin <- which(y==0)
+malin <- which(y==1)
+```
+
+#Question 9 
+```{R}
+#Indice des ensemble d'entrainement et de test
+# 200 premières observations benins
+train_set <- benin[0:200]
+#maligne et une partie des benins
+test_set <- union(setdiff(benin,train_set),malin)
+```
