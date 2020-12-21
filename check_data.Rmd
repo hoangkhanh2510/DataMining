@@ -17,8 +17,11 @@ library(Metrics)
 library(caret)
 library(openxlsx)
 library(ClustersAnalysis)
-library(rpart)
+library(rpart) #arbre de decision
 library(rpart.plot)
+library(ROCR)  # tracer la courbe de Roc
+library(Metrics) # calculer aire sous la courbe de Roc
+library(gbm) # gradient boosting
 
 ```
 
@@ -458,25 +461,74 @@ confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal'
 
 
 
+############################################### Gradient Boosting#######################
+
+```{r}
+library(gbm)
+```
+
+
+```{r}
+data_gb=data_train[,]
+data_gb$class=ifelse(data_gb$class=='normal',1,0)
+```
+
+
+```{r}
+gb_model=gbm(formula = class~.,distribution = 'bernoulli', cv.folds = 15, data = data_gb, n.trees = 10000)
+```
 
 
 
+```{r}
+# optimiser le nombre d'arbre
+
+ntree_gb <- gbm.perf(gb_model, method = 'cv')
+print(ntree_gb)
+```
+
+```{r}
+data_gb_test=data_test[,]
+data_gb_test$class=ifelse(data_gb_test$class=='normal',1,0)
+```
 
 
+```{r}
+predict_gb=predict(gb_model,newdata = data_gb_test, n.trees = 9753, type = 'response')
+```
+
+```{r}
+#matrice de confusion en utilisant caret
+library(caret)
+prediction_gb=ifelse(predict_gb<0.5,0,1)
+confusionMatrix(data=as.factor(prediction_gb),as.factor(data_gb_test$class), positive = '0')
+```
 
 
+```{r}
+library(Metrics)
+auc(actual = data_gb_test$class, predict_gb)
+```
+# ROC Curve
 
 
+```{r}
+# liste des predictions avec bagged trees et gradient boosting
+preds_list <- list(predict_ensemble_proba[,2], predict_gb)
 
+# liste des valeurs reels
+m <- length(preds_list)
+actuals_list <- rep(list(data_gb_test$class), m)
 
+# Plot the ROC curves
+pred <- prediction(preds_list, actuals_list)
+rocs <- performance(pred, "tpr", "fpr")
+plot(rocs, col = as.list(1:m), main = "Courbe de ROC sur l'ensemble test")
+legend(x = "bottomright", 
+       legend = c("Bagged Trees", "GBM"),
+       fill = 1:m)
 
-
-
-
-
-
-
-
+```
 
 
 
