@@ -15,9 +15,11 @@ knitr::opts_chunk$set(echo = TRUE)
 #Question 2
 ```{r}
 #Chargement des données
-setwd("D:/OneDrive/Documents/COURS/M2 SISE/Machine learning ah pine/Projet")
+setwd("C:/Users/DELL/Desktop/Master SISE/Github/Ahpine/DataMining")#D:/OneDrive/Documents/COURS/M2 SISE/Machine learning ahpine/Projet")
 D <- read.table("breast-cancer-wisconsin.data", sep = ",")
+
 ```
+
 
 # Question 3
 ```{r}
@@ -78,3 +80,106 @@ train_set <- benin[0:200]
 #maligne et une partie des benins
 test_set <- union(setdiff(benin,train_set),malin)
 ```
+
+
+
+
+
+
+
+
+## PCA kernel
+
+```{r}
+#changer le type du V7
+X$V7=as.numeric(D$V7)
+```
+
+
+Q17
+
+```{r}
+# chargement la librairie kernlab
+library (kernlab)
+```
+
+
+```{r}
+#instancier le Radial Basis kernel function "Gaussian" avec sigma=1/8
+kernel = rbfdot(sigma=1/8)
+
+# calculer la matrice à noyau avec le noyau radial pour l'ensemble d'apprentissage
+Ktrain = kernelMatrix(kernel =kernel,x=as.matrix(X[train_set,]))
+```
+
+
+Q18
+
+```{r}
+# calculer deuxieme terme de la somme dans la formule (1)
+k2 = apply(Ktrain,1,sum)
+# calculer troisieme terme de la somme dans la formule (1)
+k3 = apply(Ktrain,2,sum)
+# calculer quatrieme terme de la somme dans la formule (1)
+k4 = sum(Ktrain)
+# nombre de ligne du Ktrain
+n=nrow(Ktrain)
+# construire une matrice de n lignes et n colonnes
+KtrainCent = matrix(0,ncol=n,nrow=n)
+
+for(i in 1:n){
+  for (j in 1:n){
+    #calcul le coefficient (K'(i,j)) de la matrice K' qui est la transformation de la matrice à noyau K
+    KtrainCent[i,j]= Ktrain[i,j]-1/n*k2[i]-1/n*k3[j]+1/n^2*k4
+    }
+  }
+```
+
+Q19
+
+
+```{r}
+# la décomposition spectrale de la matrice KtrainCent
+eigen_KtrainCent=eigen(KtrainCent)
+```
+
+
+Q20
+
+
+
+```{r}
+# calculer les alpha_m
+s=80
+A = eigen_KtrainCent$vectors[,1:s]%*% diag(1/sqrt(eigen_KtrainCent$values[1:s]))
+
+```
+
+
+Q21
+
+```{r}
+# calculer la matrice à noyau avec le noyau radial pour tous les individus
+K = kernelMatrix(kernel,as.matrix(X))
+```
+
+
+Q22
+
+
+
+```{r}
+# calculer le premier terme de la somme dans la formule (4)
+p1=as.numeric(diag(K))
+# calculer le deuxieme terme de la somme dans la formule (4)
+p2=-2/n*apply(K[,train_set],1,sum)
+# calculer le troisieme terme de la somme dans la formule (4)
+p3=1/(n^2)*sum(K[train_set,train_set])
+
+```
+
+
+
+
+
+
