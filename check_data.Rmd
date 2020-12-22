@@ -530,6 +530,96 @@ legend(x = "bottomright",
 
 ```
 
+########################################### Random Forest #################################################
+
+```{r}
+library(randomForest)
+```
+```{r}
+# preparer le data pour random forest
+
+data_rf=data_train[,]
+data_rf$class=as.factor(data_rf$class)
+data_rf_x=subset(data_rf,select=-class)
+data_rf_y=as.factor(data_rf$class) # il faut transformer en type factor
+
+```
+
+
+
+```{r}
+# optimisez le hyperparametre mtry:
+
+mtry_search = tuneRF(x=data_rf_x, y = data_rf_y, ntreeTry = 500)
+               
+mtry_opt <- mtry_search [,"mtry"][which.min(mtry_search [,"OOBError"])]
+print(mtry_opt)
+
+```
+
+
+
+```{r}
+# optimiser les hyperparametres mtry, nodesize, sampsize, ntree
+
+# liste des valeurs des hyperparametres à tester
+mtry = seq(4, 19, 2)
+nodesize = seq(3, 8, 2)
+sampsize = nrow(data_train) * c(0.5, 0.7, 0.8)
+#ntree=seq(400,1000,100)
+
+# le dataframe contient toutes les possibilites  
+hyper_grid = expand.grid(mtry = mtry, nodesize = nodesize, sampsize = sampsize) # ntree=ntree)
+
+# vecteur contient des erreurs
+oob_err = c()
+
+# recherche des hyperparametres:
+for (i in 1:nrow(hyper_grid)) {
+  model = randomForest(formula = class ~ ., data = data_rf, mtry = hyper_grid$mtry[i],
+                          nodesize = hyper_grid$nodesize[i],
+                          sampsize = hyper_grid$sampsize[i])
+                          
+                       
+  oob_err[i] = model$err.rate[nrow(model$err.rate), "OOB"]
+}
+
+# identifier les meilleurs hyperparametres
+opt_i = which.min(oob_err)
+print(hyper_grid[opt_i,])
+
+```
+
+
+
+```{r}
+# train et test avec le meilleur model
+
+model = randomForest(formula = class ~ ., data = data_rf, mtry = 6, nodesize = 3, sampsize = 13225)
+predict_rf=predict(model,newdata = data_test, type = 'class')
+
+```
+
+
+
+```{r}
+confusionMatrix(data=as.factor(predict_rf),as.factor(data_test$class), positive = 'normal')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
