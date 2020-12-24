@@ -172,11 +172,73 @@ Q22
 # calculer le premier terme de la somme dans la formule (4)
 p1=as.numeric(diag(K))
 # calculer le deuxieme terme de la somme dans la formule (4)
-p2=-2/n*apply(K[,train_set],1,sum)
+p2=as.numeric(-2/n*apply(K[,train_set],1,sum))
 # calculer le troisieme terme de la somme dans la formule (4)
-p3=1/(n^2)*sum(K[train_set,train_set])
+p3=as.numeric(1/(n^2)*sum(K[train_set,train_set]))
 
 ```
+
+
+Q23
+
+
+
+```{r}
+ps=p1[test_set]+p2[test_set]+p3
+```
+
+
+
+Q24
+
+```{r}
+f1=K[,train_set]%*% A
+f2=as.numeric(-1/n*(t(A)%*%apply(K[train_set,train_set],1,sum)))
+f3=as.matrix(-1/n*apply(K[,train_set],1,sum))%*% t(as.matrix(apply(A,2,sum)))
+f4=1/(n^2)*sum(K[train_set,train_set])*apply(A,2,sum)
+```
+
+
+Q25
+
+
+```{r}
+f2bis=matrix(rep(f2,683), nrow=683,ncol=80,byrow=T)
+f4bis=matrix(rep(f4,683), nrow=683,ncol=80,byrow=T)
+fl=f1[test_set,]+f2bis[test_set,]+f3[test_set,]+f4bis[test_set,]
+```
+
+
+
+Q26
+
+```{r}
+fl_somme=apply(fl*fl,1,sum)
+kpca_score_test=ps-fl_somme
+```
+
+
+
+
+```{r}
+kpca_score_test[1:20]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
