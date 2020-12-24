@@ -224,6 +224,20 @@ kpca_score_test=ps-fl_somme
 kpca_score_test[1:20]
 ```
 
+Q27
+
+```{r}
+library(ROCR)
+```
+
+
+```{r}
+
+pred_oc_kpca = prediction(kpca_score_test,y[test_set])
+oc_kpca_roc = performance(pred_oc_kpca, measure = "tpr", x.measure= "fpr")
+plot(oc_kpca_roc)
+
+```
 
 
 
