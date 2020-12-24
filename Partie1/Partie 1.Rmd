@@ -83,7 +83,52 @@ test_set <- union(setdiff(benin,train_set),malin)
 
 
 
+## 4 ONE CLASS SVM 
+#Question 10 
+```{r}
+#Chargez 
+library(e1071)
+library(rpart)
+```
 
+
+
+#Question 11
+```{r}
+
+oc_svm_fit <- svm(train_set,y=NULL,kernel = "linear", type ="one-classification" , gamma = 1/2)
+summary(oc_svm_fit)
+```
+#Question 12
+```{r}
+oc_svm_pred_test  <- predict(oc_svm_fit, test_set,decision.values = TRUE)
+```
+
+#Question 13 
+```{r}
+attr(oc_svm_pred_test ,"decision.values")
+oc_svm_score_test=-as.numeric(attr(oc_svm_pred_test ,"decision.values"))
+plot(oc_svm_score_test)
+```
+#COUBRE ROC
+
+#Question 14
+```{r}
+install.packages("ROCR")
+library(ROCR)
+```
+
+#Question 15
+```{r}
+pred_oc_svm=prediction(oc_svm_score_test, y[test_set])
+oc_svm_roc=performance(pred_oc_svm,measure="tpr",x.measure = "fpr")
+plot(oc_svm_roc)
+```
+AUC est plutot high 
+
+#Question 16
+
+Modele predicte plutot bien.
 
 
 
