@@ -299,4 +299,4 @@ print(auc_ROCR)
 
 D'après la courbe et l'AUC le modèle Kernel PCA est aussi performant que le SMV. Néamoins si on compare les deux AUC, celui du kernel PCA est légèrement plus élevé. 
 AUC SVM = 0.9923863
-AUC Kernel PCA = 0.99525
+AUC Kernel PCA = 0.99627
