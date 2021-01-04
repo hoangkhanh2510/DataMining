@@ -93,15 +93,19 @@ library(rpart)
 
 
 
+
+
 #Question 11
 ```{r}
+#changer le type du V7
+X$V7=as.numeric(D$V7)
 
-oc_svm_fit <- svm(train_set,y=NULL,kernel = "linear", type ="one-classification" , gamma = 1/2)
+oc_svm_fit <- svm(as.matrix(X[train_set,]),y=NULL,kernel = "radial", type ="one-classification" , gamma = 1/2)
 summary(oc_svm_fit)
 ```
 #Question 12
 ```{r}
-oc_svm_pred_test  <- predict(oc_svm_fit, test_set,decision.values = TRUE)
+oc_svm_pred_test  <- predict(oc_svm_fit, X[test_set,],decision.values = TRUE)
 ```
 
 #Question 13 
@@ -114,7 +118,7 @@ plot(oc_svm_score_test)
 
 #Question 14
 ```{r}
-install.packages("ROCR")
+#install.packages("ROCR")
 library(ROCR)
 ```
 
@@ -129,6 +133,14 @@ AUC est plutot high
 #Question 16
 
 Modele predicte plutot bien.
+
+
+```{r}
+#calculer auc
+auc_ROCR <- performance(pred_oc_svm, measure = "auc")
+auc_ROCR <- auc_ROCR@y.values[[1]]
+print(auc_ROCR)
+```
 
 
 
@@ -280,11 +292,24 @@ library(ROCR)
 
 pred_oc_kpca = prediction(kpca_score_test,y[test_set])
 oc_kpca_roc = performance(pred_oc_kpca, measure = "tpr", x.measure= "fpr")
-plot(oc_kpca_roc)
+plot(oc_svm_roc)
+plot(oc_kpca_roc, add=TRUE, col=2)
 
 ```
 
 
+
+
+
+
+
+
+```{r}
+#calculer auc
+auc_ROCR <- performance(pred_oc_kpca, measure = "auc")
+auc_ROCR <- auc_ROCR@y.values[[1]]
+print(auc_ROCR)
+```
 
 
 
