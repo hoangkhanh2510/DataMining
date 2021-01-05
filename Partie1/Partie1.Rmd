@@ -199,7 +199,7 @@ for(i in 1:n){
   }
 ```
 
-#Question )=)àç_àpo^lmjiuçàjà
+#Question 19
 
 ```{r}
 # la décomposition spectrale de la matrice KtrainCent
@@ -284,9 +284,12 @@ library(ROCR)
 #Courbe ROC du SVM et du kernel PCA pour comparer
 pred_oc_kpca = prediction(kpca_score_test,y[test_set])
 oc_kpca_roc = performance(pred_oc_kpca, measure = "tpr", x.measure= "fpr")
+#pdf('rplot.pdf')
 plot(oc_svm_roc)
 plot(oc_kpca_roc, add=TRUE, col=2)
-
+legend(x = "bottomright", 
+       legend = c("One-class SVM", "ACP Kernel"),
+       fill = 1:2)
 ```
 
 
