@@ -28,9 +28,6 @@ library(gbm) # gradient boosting
 
 ```
 
-
-
-
 ```{r}
 library(openxlsx)
 library(ClustersAnalysis)
@@ -38,19 +35,38 @@ library(tidyverse)
 ```
 
 ```{r}
-setwd("/Users/hoangkhanhle/Desktop/School/Master 2/Data Mining/Projet/")
+#setwd("/Users/hoangkhanhle/Desktop/School/Master 2/Data Mining/Projet/")
 df=read.csv("Train_data.csv")
 ```
 
-
+#Analyse globale 
 
 ```{r}
+#Les 10 premières observations
 head(df,10)
 ```
-
-
+```{r}
+#Information sur le jeu de données
+print(str(df))
+```
+On a dans ce jeu de données 25192 observations et 42 variables dont 4 qui sont qualitative. La dernière variable "class" est la variable que nous cherchons à prédire.
 
 ```{r}
+#Répartition de la variable class
+prop.table(table(df$class))
+```
+
+Dans ce jeu de données nous avons 47% de connexion anormal et 53% de connexion normal 
+
+```{r}
+#Résumé des données
+summary(df)
+```
+On voit que nous avons des ordres de grandeurs différents sur certaines variables nottament les variables duration, src_bytes et dst_bytes qui ont des valeurs en moyenne beaucoup plus élevés que les autres variables. 
+
+#Constitution de notre jeu de données X
+```{r}
+#Jeu de données sans la variable predictive
 df_not_class=df[,-42]
 head(df_not_class)
 ```
@@ -68,17 +84,19 @@ var=var_quanti==FALSE
 ```
 
 
-
 ```{r}
+#Jeu de données avec seulement les variables quantitative
 df_not_class_quanti=df_not_class[,var]
 ```
 
 
 ```{r}
+#10 première obs
 head(df_not_class_quanti,10)
 ```
 
 ```{r}
+#Donnée final avec les variables quanti et la variable class
 data=cbind(df_not_class_quanti,df$class)
 ```
 
@@ -87,7 +105,7 @@ data=cbind(df_not_class_quanti,df$class)
 head(data,10)
 ```
 
-######################## Test ###########################################################
+# Test et selection de variables
 
 
 ```{r}
@@ -97,24 +115,19 @@ object=multivariate_object(data,22)
 ```{r}
 m_test.value(object = object,i=1)
 ```
-```{r}
-help(m_test.value)
-```
 
-#les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais
+Les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais
 
 
 ```{r}
 x=m_test.value(object = object,i=2)
-
-```
-```{r}
 x$pvalue<=0.05
 ```
 
-# les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais:
+Les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais:
 
 ```{r}
+#Nous gardons seulement les variables significatifs
 data_final=data[,-c(2,3,5)]
 ```
 
@@ -123,42 +136,27 @@ object=multivariate_object(data_final,19)
 ```
 
 
-
 # Rapport de correlation
 
 ```{r}
 ### R^2
-
 m_R2_multivariate(object, rescale = TRUE)
-
-
 ```
 
-
-
-
-
 ```{r}
+#Nom des variables de notre dataframe final
 colnames(data_final)
 ```
 
-
 # fisher test
-
 
 ```{r}
 u_object=Univariate_object(data_final,19)
 ```
 
-
-
 ```{r}
 u_fisher_test_all(u_object)
 ```
-
-
-
-
 
 
 # Le nombre des valeurs differentes pour chaque colonne
@@ -185,15 +183,7 @@ data_test=data_final[ind_test,]
 ```
 
 
-
-
-
-
-
-
-###################ACP########################################################################################
-
-
+###################ACP#######################################################################################
 
 
 ```{r}
@@ -218,19 +208,6 @@ m_data_total=multivariate_object(data_final,19)
 m_kmean_clustering_plot(m_data_total, interact = FALSE, i=1,j=2)
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -266,8 +243,6 @@ rpart.plot(data_train_arbre)
 ```
 
 ## Predire avec arbre de decision
-
-
 
 ```{r}
 predict=predict(data_train_arbre, data_test,"class")
@@ -331,10 +306,150 @@ print(conf2[2,2]/sum(conf2[,"normal"]))
 ```
 
 
-#################### TEST AVEC METHODE D"ENSEMBLE(PAS ENCORE CV) ################################################
+
+# SVM
+#################################################################################################################
+################################################### SVM #########################################################
+#################################################################################################################
 
 
 
+# Validation croise sur l'ensemble de l'apprentissage et tester sur le test
+
+
+```{r}
+data_svm=data_train[,]
+data_svm$class=as.factor(data_train$class)
+```
+
+
+
+
+```{r}
+svm_fit = svm (class ~. , data =data_svm, type ="C-classification", kernel ="radial" , cross =5)
+```
+
+
+```{r}
+predict_svm=predict(svm_fit, data_test, type='raw')
+```
+
+
+
+```{r}
+#matrice de confusion en utilisant caret
+confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal')
+```
+
+
+# Optimisation des hyperparametres
+
+```{r}
+#c_seq = c (1 ,10 ,50)
+#eps_seq = c (0.05 ,0.1 ,0.5)
+#kernel = c("linear", 'polynomial','radial') 
+#svm_grid_search = tune ( method = svm , class ~. ,
+#data =data_svm , ranges = list ( epsilon = eps_seq , kernel=kernel, cost = c_seq ) )
+#print (svm_grid_search)
+#plot (svm_grid_search)
+
+```
+
+```{r}
+#predict_svm=predict(svm_grid_search$best.model, data_test, type='raw')
+```
+
+
+```{r}
+#matrice de confusion en utilisant caret
+confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal')
+```
+
+
+# RESEAUX DE NEURONNE
+############################################################################################################################################################ RESEAUX DE NEURONNE #################################################################################################################################################################
+
+```{r}
+install.packages("neuralnet")
+install.packages("keras")
+```
+```{r}
+#library
+require(neuralnet)
+library(keras)
+library(mltools)
+library(data.table)
+library(caret)
+
+
+#Rename 
+names(data_train)[19]<-"class"
+names(data_test)[19]<-"class"
+#one hot train 
+dmy <- dummyVars("~ .",data=data_train)
+data_train_onehot<- data.frame(predict(dmy, newdata = data_train))
+#Drop colonne normal
+data_train_onehot<- data_train_onehot[-20]
+
+#one hot test 
+dmy <- dummyVars("~ .",data=data_test)
+data_test_onehot<- data.frame(predict(dmy, newdata = data_test))
+#Drop colonne normal
+data_train_onehot<- data_test_onehot[-20]
+
+```
+
+
+```{r}
+normalize<-function(x){
+  return((x-min(x))/max(x)-min(x))
+}
+maxmindf<-as.data.frame(lapply(data_train_onehot,normalize))
+```
+
+```{r}
+#fit reseaux de neuronnes 
+nn=neuralnet(classanomaly~.,data=maxmindf,hidden=1,act.fct = "logistic",linear.output = FALSE,threshold = 0.01)
+plot(nn)
+```
+
+## Accuracy
+
+
+```{r}
+temp_test <- data_test_onehot[-19]
+head(temp_test)
+nn.results <- compute(nn,temp_test)
+results <- data.frame(actual = data_test_onehot$classanomaly, prediction = nn.results$net.result)
+print(results)
+```
+
+
+## Confusion matrix 
+
+```{r}
+roundedresults <- sapply(results, round , digits=0)
+roundedresultsdf=data.frame(roundedresults)
+attach(roundedresultsdf)
+cm<-table(actual,prediction)
+print(cm)
+#Taux d'erreur
+cm[2,1]/sum(cm)
+```
+
+#Elasticnet
+
+
+```{r}
+
+```
+
+
+#Annexe 
+
+## D'autre méthode
+
+### TEST AVEC METHODE D"ENSEMBLE(PAS ENCORE CV) 
 
 ```{r}
 install.packages("ipred")
@@ -392,7 +507,7 @@ auc(actual = ifelse(data_test$class== "normal", 1, 0), predicted = predict_ensem
 
 ```
 
-#################### TEST AVEC METHODE D"ENSEMBLE(AVEC CV) ################################################
+### TEST AVEC METHODE D"ENSEMBLE(AVEC CV)
 
 
 ```{r}
@@ -422,141 +537,8 @@ confusionMatrix(data=predict_ensemble_caret,as.factor(data_test$class), positive
 ```
 
 
-# SVM
-#################################################################################################################
-################################################### SVM #########################################################
-#################################################################################################################
+### RANDOM FOREST
 
-
-
-# Validation croise sur l'ensemble de l'apprentissage et tester sur le test
-
-
-```{r}
-data_svm=data_train[,]
-data_svm$class=as.factor(data_train$class)
-```
-
-
-
-
-```{r}
-svm_fit = svm (class ~. , data =data_svm, type ="C-classification", kernel ="radial" , cross =5)
-```
-
-
-```{r}
-predict_svm=predict(svm_fit, data_test, type='raw')
-```
-
-
-
-```{r}
-#matrice de confusion en utilisant caret
-confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal')
-```
-
-
-# Optimisation des hyperparametres
-
-
-
-```{r}
-#c_seq = c (1 ,10 ,50)
-#eps_seq = c (0.05 ,0.1 ,0.5)
-#kernel = c("linear", 'polynomial','radial') 
-#svm_grid_search = tune ( method = svm , class ~. ,
-#data =data_svm , ranges = list ( epsilon = eps_seq , kernel=kernel, cost = c_seq ) )
-#print (svm_grid_search)
-#plot (svm_grid_search)
-
-```
-
-```{r}
-#predict_svm=predict(svm_grid_search$best.model, data_test, type='raw')
-```
-
-
-```{r}
-#matrice de confusion en utilisant caret
-confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal')
-```
-
-
-
-############################################### Gradient Boosting#######################
-
-```{r}
-library(gbm)
-```
-
-
-```{r}
-data_gb=data_train[,]
-data_gb$class=ifelse(data_gb$class=='normal',1,0)
-```
-
-
-```{r}
-gb_model=gbm(formula = class~.,distribution = 'bernoulli', cv.folds = 15, data = data_gb, n.trees = 10000)
-```
-
-
-
-```{r}
-# optimiser le nombre d'arbre
-
-ntree_gb <- gbm.perf(gb_model, method = 'cv')
-print(ntree_gb)
-```
-
-```{r}
-data_gb_test=data_test[,]
-data_gb_test$class=ifelse(data_gb_test$class=='normal',1,0)
-```
-
-
-```{r}
-predict_gb=predict(gb_model,newdata = data_gb_test, n.trees = 9753, type = 'response')
-```
-
-```{r}
-#matrice de confusion en utilisant caret
-library(caret)
-prediction_gb=ifelse(predict_gb<0.5,0,1)
-confusionMatrix(data=as.factor(prediction_gb),as.factor(data_gb_test$class), positive = '0')
-```
-
-
-```{r}
-library(Metrics)
-auc(actual = data_gb_test$class, predict_gb)
-```
-## ROC Curve
-
-
-```{r}
-# liste des predictions avec bagged trees et gradient boosting
-preds_list <- list(predict_ensemble_proba[,2], predict_gb)
-
-# liste des valeurs reels
-m <- length(preds_list)
-actuals_list <- rep(list(data_gb_test$class), m)
-
-# Plot the ROC curves
-pred <- prediction(preds_list, actuals_list)
-rocs <- performance(pred, "tpr", "fpr")
-plot(rocs, col = as.list(1:m), main = "Courbe de ROC sur l'ensemble test")
-legend(x = "bottomright", 
-       legend = c("Bagged Trees", "GBM"),
-       fill = 1:m)
-
-```
-
-# RANDOM FOREST
-#################################################################################################################
-############################################# RANDOM FOREST #####################################################
-#################################################################################################################
 
 ```{r}
 library(randomForest)
@@ -632,90 +614,76 @@ predict_rf=predict(model,newdata = data_test, type = 'class')
 confusionMatrix(data=as.factor(predict_rf),as.factor(data_test$class), positive = 'normal')
 ```
 
-# RESEAUX DE NEURONNE
-#################################################################################################################
-########################################### RESEAUX DE NEURONNE #################################################
-#################################################################################################################
+
+
+### Gradient Boosting
 
 ```{r}
-install.packages("neuralnet")
-install.packages("keras")
+library(gbm)
 ```
+
+
 ```{r}
-#library
-require(neuralnet)
-library(keras)
-library(mltools)
-library(data.table)
+data_gb=data_train[,]
+data_gb$class=ifelse(data_gb$class=='normal',1,0)
+```
+
+
+```{r}
+gb_model=gbm(formula = class~.,distribution = 'bernoulli', cv.folds = 15, data = data_gb, n.trees = 10000)
+```
+
+
+
+```{r}
+# optimiser le nombre d'arbre
+
+ntree_gb <- gbm.perf(gb_model, method = 'cv')
+print(ntree_gb)
+```
+
+```{r}
+data_gb_test=data_test[,]
+data_gb_test$class=ifelse(data_gb_test$class=='normal',1,0)
+```
+
+
+```{r}
+predict_gb=predict(gb_model,newdata = data_gb_test, n.trees = 9753, type = 'response')
+```
+
+```{r}
+#matrice de confusion en utilisant caret
 library(caret)
-
-
-#Rename 
-names(data_train)[19]<-"class"
-names(data_test)[19]<-"class"
-#one hot train 
-dmy <- dummyVars("~ .",data=data_train)
-data_train_onehot<- data.frame(predict(dmy, newdata = data_train))
-#Drop colonne normal
-data_train_onehot<- data_train_onehot[-20]
-
-#one hot test 
-dmy <- dummyVars("~ .",data=data_test)
-data_test_onehot<- data.frame(predict(dmy, newdata = data_test))
-#Drop colonne normal
-data_train_onehot<- data_test_onehot[-20]
-
+prediction_gb=ifelse(predict_gb<0.5,0,1)
+confusionMatrix(data=as.factor(prediction_gb),as.factor(data_gb_test$class), positive = '0')
 ```
 
 
 ```{r}
-normalize<-function(x){
-  return((x-min(x))/max(x)-min(x))
-}
-maxmindf<-as.data.frame(lapply(data_train_onehot,normalize))
+library(Metrics)
+auc(actual = data_gb_test$class, predict_gb)
 ```
-
-```{r}
-#fit reseaux de neuronnes 
-nn=neuralnet(classanomaly~.,data=maxmindf,hidden=1,act.fct = "logistic",linear.output = FALSE,threshold = 0.01)
-plot(nn)
-```
-
-## Accuracy
+## ROC Curve
 
 
 ```{r}
-temp_test <- data_test_onehot[-19]
-head(temp_test)
-nn.results <- compute(nn,temp_test)
-results <- data.frame(actual = data_test_onehot$classanomaly, prediction = nn.results$net.result)
-print(results)
+# liste des predictions avec bagged trees et gradient boosting
+preds_list <- list(predict_ensemble_proba[,2], predict_gb)
+
+# liste des valeurs reels
+m <- length(preds_list)
+actuals_list <- rep(list(data_gb_test$class), m)
+
+# Plot the ROC curves
+pred <- prediction(preds_list, actuals_list)
+rocs <- performance(pred, "tpr", "fpr")
+plot(rocs, col = as.list(1:m), main = "Courbe de ROC sur l'ensemble test")
+legend(x = "bottomright", 
+       legend = c("Bagged Trees", "GBM"),
+       fill = 1:m)
+
 ```
-
-
-## Confusion matrix 
-
-```{r}
-roundedresults <- sapply(results, round , digits=0)
-roundedresultsdf=data.frame(roundedresults)
-attach(roundedresultsdf)
-cm<-table(actual,prediction)
-print(cm)
-#Taux d'erreur
-cm[2,1]/sum(cm)
-```
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
