@@ -372,6 +372,7 @@ confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal'
 ```{r}
 install.packages("neuralnet")
 install.packages("keras")
+install.packages("mltools")
 ```
 ```{r}
 #library
@@ -439,9 +440,71 @@ cm[2,1]/sum(cm)
 
 #Elasticnet
 
+```{r}
+#Création des données
+yTrain = as.matrix(data_train[,19])
+XTrain = as.matrix(data_train[,-19])
+yTest = as.matrix(data_test[,19])
+XTest = as.matrix(data_test[,-19])
+```
+
+###Test avec alpha = 0.5
+```{r}
+# Elasticnet validation croisée
+cv.elnet <-cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=0.5)
+plot(cv.elnet)
+```
 
 ```{r}
+#lambda min (meilleur lamba)
+print(cv.elnet$lambda.min)
+#prédiction
+pred.elnet <-predict(cv.elnet,XTest,s=c(cv.elnet$lambda.min),type="class")
+print(table(pred.elnet))
+#taux d'erreur
+print(sum(data_test$class != pred.elnet)/nrow(data_test))
+```
+Le meilleur lamba est 0.001342274 avec un taux d'erreur de 6.8%
 
+###Test avec alpha = 0.8
+
+```{r}
+#validation croisée
+cv.elnet2 <-cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=0.8)
+plot(cv.elnet2)
+```
+
+```{r}
+#lambda min
+print(cv.elnet2$lambda.min)
+#prédiction
+pred.elnet2 <-predict(cv.elnet2,XTest,s=c(cv.elnet2$lambda.min),type="class")
+print(table(pred.elnet2))
+#taux d'erreur
+print(sum(data_test$class != pred.elnet2)/nrow(data_test))
+```
+
+### teste avec une serie de alpha 
+
+```{r}
+alpha <- seq(from=0.1, to=0.9, by = 0.1)
+result_tot = c()
+for (alpha_  in alpha){
+  print(alpha_)
+  cv.elnet <-cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=alpha_)
+  #print(plot(cv.elnet))
+  #lambda min
+  lambda <- cv.elnet$lambda.min
+  #prédiction
+  pred.elnet <-predict(cv.elnet,XTest,s=c(cv.elnet$lambda.min),type="class")
+  #print(table(pred.elnet))
+  #taux d'erreur
+  te <- sum(data_test$class != pred.elnet)/nrow(data_test)
+  result = c(alpha_, lambda, te)
+  result_tot = append(result_tot, result)
+}
+print(result_tot)
+#La valeur d'alpha pour lequel le taux d'erreur est le plus faible est de 0.6 avec un lambade de 0.0013 et un taux d'erreur de 0.068
 ```
 
 
