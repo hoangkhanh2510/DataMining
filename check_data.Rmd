@@ -7,7 +7,10 @@ output: word_document
 
 
 ```{r}
-#devtools::install_github("clepadellec/ClustersAnalysis")
+install.packages("devtools")
+library(devtools)
+devtools::install_github("clepadellec/ClustersAnalysis")
+install.packages("readr")
 ```
 
 
@@ -29,7 +32,14 @@ library(gbm) # gradient boosting
 
 
 ```{r}
-df=read.csv('C:/Users/DELL/Desktop/Master SISE/Github/DataMining/Train_data.csv')
+library(openxlsx)
+library(ClustersAnalysis)
+library(tidyverse)
+```
+
+```{r}
+setwd("/Users/hoangkhanhle/Desktop/School/Master 2/Data Mining/Projet/")
+df=read.csv("Train_data.csv")
 ```
 
 
@@ -87,12 +97,19 @@ object=multivariate_object(data,22)
 ```{r}
 m_test.value(object = object,i=1)
 ```
+```{r}
+help(m_test.value)
+```
 
 #les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais
 
 
 ```{r}
-m_test.value(object = object,i=2)
+x=m_test.value(object = object,i=2)
+
+```
+```{r}
+x$pvalue<=0.05
 ```
 
 # les variables hot/dst_bytes/src_bytes/srv_count caracterise la classe 'normal' le plus mauvais:
@@ -219,7 +236,9 @@ m_kmean_clustering_plot(m_data_total, interact = FALSE, i=1,j=2)
 
 #################### TEST AVEC ARBRE DE DECISION (PAS ENCORE CV) ################################################
 #TEST AVEC ARBRE DE DECISION
-
+#################################################################################################################
+########################################### ARBRE DE DECISION ###################################################
+#################################################################################################################
 
 
 ```{r}
@@ -318,6 +337,7 @@ print(conf2[2,2]/sum(conf2[,"normal"]))
 
 
 ```{r}
+install.packages("ipred")
 library(ipred)
 ```
 
@@ -402,7 +422,10 @@ confusionMatrix(data=predict_ensemble_caret,as.factor(data_test$class), positive
 ```
 
 
-###################################SVM####################################################################
+# SVM
+#################################################################################################################
+################################################### SVM #########################################################
+#################################################################################################################
 
 
 
@@ -509,7 +532,7 @@ confusionMatrix(data=as.factor(prediction_gb),as.factor(data_gb_test$class), pos
 library(Metrics)
 auc(actual = data_gb_test$class, predict_gb)
 ```
-# ROC Curve
+## ROC Curve
 
 
 ```{r}
@@ -530,7 +553,10 @@ legend(x = "bottomright",
 
 ```
 
-########################################### Random Forest #################################################
+# RANDOM FOREST
+#################################################################################################################
+############################################# RANDOM FOREST #####################################################
+#################################################################################################################
 
 ```{r}
 library(randomForest)
@@ -606,13 +632,78 @@ predict_rf=predict(model,newdata = data_test, type = 'class')
 confusionMatrix(data=as.factor(predict_rf),as.factor(data_test$class), positive = 'normal')
 ```
 
+# RESEAUX DE NEURONNE
+#################################################################################################################
+########################################### RESEAUX DE NEURONNE #################################################
+#################################################################################################################
+
+```{r}
+install.packages("neuralnet")
+install.packages("keras")
+```
+```{r}
+#library
+require(neuralnet)
+library(keras)
+library(mltools)
+library(data.table)
+library(caret)
 
 
+#Rename 
+names(data_train)[19]<-"class"
+names(data_test)[19]<-"class"
+#one hot train 
+dmy <- dummyVars("~ .",data=data_train)
+data_train_onehot<- data.frame(predict(dmy, newdata = data_train))
+#Drop colonne normal
+data_train_onehot<- data_train_onehot[-20]
+
+#one hot test 
+dmy <- dummyVars("~ .",data=data_test)
+data_test_onehot<- data.frame(predict(dmy, newdata = data_test))
+#Drop colonne normal
+data_train_onehot<- data_test_onehot[-20]
+
+```
 
 
+```{r}
+normalize<-function(x){
+  return((x-min(x))/max(x)-min(x))
+}
+maxmindf<-as.data.frame(lapply(data_train_onehot,normalize))
+```
+
+```{r}
+#fit reseaux de neuronnes 
+nn=neuralnet(classanomaly~.,data=maxmindf,hidden=1,act.fct = "logistic",linear.output = FALSE,threshold = 0.01)
+plot(nn)
+```
+
+## Accuracy
 
 
+```{r}
+temp_test <- data_test_onehot[-19]
+head(temp_test)
+nn.results <- compute(nn,temp_test)
+results <- data.frame(actual = data_test_onehot$classanomaly, prediction = nn.results$net.result)
+print(results)
+```
 
+
+## Confusion matrix 
+
+```{r}
+roundedresults <- sapply(results, round , digits=0)
+roundedresultsdf=data.frame(roundedresults)
+attach(roundedresultsdf)
+cm<-table(actual,prediction)
+print(cm)
+#Taux d'erreur
+cm[2,1]/sum(cm)
+```
 
 
 
