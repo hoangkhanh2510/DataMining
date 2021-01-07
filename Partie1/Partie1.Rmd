@@ -102,11 +102,16 @@ X$V7=as.numeric(D$V7)
 oc_svm_fit <- svm(as.matrix(X[train_set,]),y=NULL,kernel = "radial", type ="one-classification" , gamma = 1/2)
 summary(oc_svm_fit)
 ```
+
+
 #Question 12
 ```{r}
 #Prédiction des scores 
 oc_svm_pred_test  <- predict(oc_svm_fit, X[test_set,],decision.values = TRUE)
 ```
+
+
+
 
 #Question 13 
 ```{r}
@@ -116,6 +121,11 @@ oc_svm_score_test=-as.numeric(attr(oc_svm_pred_test ,"decision.values"))
 plot(oc_svm_score_test)
 
 ```
+
+
+
+
+
 
 ##COUBRE ROC
 
@@ -130,13 +140,16 @@ library(ROCR)
 ```{r}
 pred_oc_svm=prediction(oc_svm_score_test, y[test_set])
 oc_svm_roc=performance(pred_oc_svm,measure="tpr",x.measure = "fpr")
+#pdf('rplot1.pdf')
 plot(oc_svm_roc)
 ```
-AUC est plutot high 
+
+
+AUC est high 
 
 #Question 16
 
-Modele predicte plutot bien.
+Modele predicte bien.
 
 
 ```{r}
@@ -144,7 +157,7 @@ Modele predicte plutot bien.
 auc_ROCR <- performance(pred_oc_svm, measure = "auc")
 auc_ROCR <- auc_ROCR@y.values[[1]]
 print(auc_ROCR)
-# AUC = 0.99, l'AUC est élevé le modèle est donc performant
+# AUC = 0.9932, l'AUC est élevé le modèle est donc performant
 ```
 
 
