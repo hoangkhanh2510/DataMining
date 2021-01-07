@@ -20,23 +20,21 @@ library(Metrics)
 library(caret)
 library(openxlsx)
 library(ClustersAnalysis)
-library(rpart) #arbre de decision
-library(rpart.plot)
+library(rpart) # pour arbre de decision
+library(rpart.plot) # Pour la représentation de l’arbre de décision
 library(ROCR)  # tracer la courbe de Roc
 library(Metrics) # calculer aire sous la courbe de Roc
 library(gbm) # gradient boosting
-
-```
-
-```{r}
-library(openxlsx)
-library(ClustersAnalysis)
 library(tidyverse)
+
+
 ```
+
 
 ```{r}
 #setwd("/Users/hoangkhanhle/Desktop/School/Master 2/Data Mining/Projet/")
-df=read.csv("Train_data.csv")
+#df=read.csv("Train_data.csv")
+df=read.csv("C:/Users/DELL/Desktop/Master SISE/Github/Ahpine/DataMining/Train_data.csv")
 ```
 
 #Analyse globale 
@@ -45,6 +43,8 @@ df=read.csv("Train_data.csv")
 #Les 10 premières observations
 head(df,10)
 ```
+
+
 ```{r}
 #Information sur le jeu de données
 print(str(df))
@@ -78,6 +78,7 @@ head(df_not_class)
 var_quanti=sapply(df_not_class, function(x) is.factor(x)| is.character(x)|length(unique(x))<50)
 
 ```
+
 
 ```{r}
 var=var_quanti==FALSE
@@ -171,14 +172,19 @@ for (i in 1:18){
 ##Séparer en train-test (0.75-0.25)
 
 ```{r}
+# renommer le nom de la colonne cible dans le data_final
 colnames(data_final)[19]='class'
 ```
 
 
 ```{r}
+# nombre des lignes de data_final
 n=nrow(data_final)
+# les indices des observations test
 ind_test=sample(1:n, n*0.25, replace = FALSE, prob = NULL)
+# l'ensemble d'apprentissage
 data_train=data_final[-ind_test,]
+#l'ensemble test
 data_test=data_final[ind_test,]
 ```
 
@@ -211,50 +217,34 @@ m_kmean_clustering_plot(m_data_total, interact = FALSE, i=1,j=2)
 
 
 
-#################### TEST AVEC ARBRE DE DECISION (PAS ENCORE CV) ################################################
-#TEST AVEC ARBRE DE DECISION
 #################################################################################################################
 ########################################### ARBRE DE DECISION ###################################################
 #################################################################################################################
 
 
-```{r}
-head(data_train)
-```
 
 
-
-
-
-##Lancer Arbre de decision
 
 ```{r}
-library(rpart)
+#Lancer automatique Arbre de decision sur l'ensemble d'apprentissage
 data_train_arbre=rpart(class~.,data=data_train, method = "class")
-plot(data_train_arbre)
-text(data_train_arbre)
-
-```
-
-```{r}
-library(rpart.plot)
-
+#plot 
 rpart.plot(data_train_arbre)
+
 ```
 
-## Predire avec arbre de decision
 
 ```{r}
-predict=predict(data_train_arbre, data_test,"class")
+# prédiction sur l'ensemble test
+predict_arb=predict(data_train_arbre, data_test,"class")
 ```
 
-
-## Calculer les metriques
 
 ```{r}
 # Matrice de confusion
+pdf('1.pdf')
 
-conf1=table(data_test$class,predict)
+conf1=table(data_test$class,predict_arb)
 print(conf1)
 
 # Taux d'erreur
@@ -273,37 +263,51 @@ print(conf1[2,2]/sum(conf1[,"normal"]))
 
 ## tuning les hyperparametres
 
+
 ```{r}
-para=rpart.control(minsplit =10, minbucket = 2)
-data_train_arbre2=rpart(class~., data_train, method = "class", control = para)
-
-#print(DFApp_arb2)
-
-rpart.plot(data_train_arbre2)
-
-predict2=predict(data_train_arbre2, data_test, type="class")
+#creation une liste des hyperparametres
+gs <- list(minsplit = c(10, 20, 30, 50, 100),
+           maxdepth = c(5,7,8,9,10, 15,20)) 
+#transformer gs en data frame grid
+gs=expand.grid(gs)
+gs
 ```
 
 
+
+
 ```{r}
-# Matrice de confusion
+#nombre de ligne de gs
+n=nrow(gs)
+#creation un vecteur de longueur n
+err=rep(0,n)
+#creation un vecteur de longueur n
+rappel=rep(0,n)
+#creation un vecteur de longueur n
+precision=rep(0,n)
 
-conf2=table(data_test$class,predict2)
-print(conf2)
+# recherche de grille
+for (i in 1:n){
+  para=rpart.control(minsplit =gs$minsplit[i], maxdepth = gs$maxdepth[i])
+  arb=rpart(class~., data_train, method = "class", control = para, minbucket = 2)
+  predict_arb=predict(arb, data_test, type='class')
+  conf=table(data_test$class,predict_arb)
+  e=1-sum(diag(conf))/sum(conf)
+  rap=conf[2,2]/sum(conf["normal",])
+  pre=conf[2,2]/sum(conf[,"normal"])
+  err[i]=e
+  rappel[i]=rap
+  precision[i]=pre
+}
 
-# Taux d'erreur
-
-print(1-sum(diag(conf2))/sum(conf2))
-
-# Taux rappel
-
-print(conf2[2,2]/sum(conf2["normal",]))
-
-# Taux precision
-
-print(conf2[2,2]/sum(conf2[,"normal"]))
-
+#dataframe qui contient des erreurs, taux rappel et precision
+gs=cbind(cbind(cbind(gs,err),rappel), precision)
+print(gs)  
 ```
+
+
+
+
 
 
 
