@@ -229,6 +229,7 @@ m_kmean_clustering_plot(m_data_total, interact = FALSE, i=1,j=2)
 #Lancer automatique Arbre de decision sur l'ensemble d'apprentissage
 data_train_arbre=rpart(class~.,data=data_train, method = "class")
 #plot 
+
 rpart.plot(data_train_arbre)
 
 ```
@@ -306,6 +307,37 @@ print(gs)
 ```
 
 
+```{r}
+#pdf('rplot2.pdf')
+plot(1:n, gs$err, type='b', col=2, xlab="modèles", ylab="taux d'erreur")
+```
+
+
+On effectue un arbre de décision avec les meilleurs hyperparamètres, on obtient le même résultat avec arbre par défaut.
+
+
+```{r}
+para=rpart.control(minsplit =10, maxdepth = 7)
+arb=rpart(class~., data_train, method = "class", control = para, minbucket = 2)
+#pdf('rplot4.pdf')
+rpart.plot(arb)
+```
+
+
+
+```{r}
+library(ROCR)
+# courbe de ROC de l'arbre de décision
+Pred.cart = predict(arb, newdata = data_test, type = "prob")
+test_class=ifelse(data_test$class=='normal',1,0)
+Pred2 = prediction(as.numeric(Pred.cart[,2]), as.numeric(test_class))
+roc.cart = performance(Pred2, "tpr", "fpr")
+plot(roc.cart)
+```
+
+
+
+
 
 
 
@@ -322,6 +354,7 @@ print(gs)
 
 
 ```{r}
+#creation les données pour svm
 data_svm=data_train[,]
 data_svm$class=as.factor(data_train$class)
 ```
@@ -330,11 +363,13 @@ data_svm$class=as.factor(data_train$class)
 
 
 ```{r}
+# Instancier svm sur l'ensemble d'apprentissage avec une validation croisé cv=5
 svm_fit = svm (class ~. , data =data_svm, type ="C-classification", kernel ="radial" , cross =5)
 ```
 
 
 ```{r}
+# Prediction sur l'ensemble test
 predict_svm=predict(svm_fit, data_test, type='raw')
 ```
 
@@ -346,21 +381,54 @@ confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal'
 ```
 
 
+```{r}
+# courbe de ROC de svm
+Pred.svm1 = predict(svm_fit, newdata = data_test, type = "prob")
+test_class=ifelse(data_test$class=='normal',1,0)
+Prediction_svm = prediction(as.numeric(Pred.svm1), as.numeric(test_class))
+roc.svm = performance(Prediction_svm, "tpr", "fpr")
+#pdf('rplot7.pdf')
+plot(roc.svm)
+```
+
+
+```{r}
+#calculer auc
+auc_ROCR <- performance(Prediction_svm, measure = "auc")
+auc_ROCR <- auc_ROCR@y.values[[1]]
+print(auc_ROCR)
+```
+
+
+
+
+
+
 # Optimisation des hyperparametres
 
 ```{r}
-#c_seq = c (1 ,10 ,50)
-#eps_seq = c (0.05 ,0.1 ,0.5)
-#kernel = c("linear", 'polynomial','radial') 
-#svm_grid_search = tune ( method = svm , class ~. ,
-#data =data_svm , ranges = list ( epsilon = eps_seq , kernel=kernel, cost = c_seq ) )
-#print (svm_grid_search)
-#plot (svm_grid_search)
+c_seq = c (1 ,10 ,50)
+eps_seq = c (0.05 ,0.1 ,0.5)
+kernel = c("linear", 'polynomial','radial') 
+svm_grid_search = tune ( method = svm , class ~. ,
+data =data_svm , ranges = list ( epsilon = eps_seq , kernel=kernel, cost = c_seq ) )
+print (svm_grid_search)
 
 ```
 
+
+
 ```{r}
-#predict_svm=predict(svm_grid_search$best.model, data_test, type='raw')
+# le meilleur modele
+print(svm_grid_search$best.model)
+
+```
+
+
+
+```{r}
+# prediction sur l'ensemble test avec le meilleur model
+predict_svm2=predict(svm_grid_search$best.model, data_test, type='raw')
 ```
 
 
@@ -368,6 +436,62 @@ confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal'
 #matrice de confusion en utilisant caret
 confusionMatrix(data=predict_svm,as.factor(data_test$class), positive = 'normal')
 ```
+
+
+
+
+```{r}
+# courbe de ROC du svm avec les meilleurs hyperparametres
+Pred.svm2 = predict(svm_grid_search$best.model, newdata = data_test, type = "prob")
+test_class=ifelse(data_test$class=='normal',1,0)
+Prediction_svm2 = prediction(as.numeric(Pred.svm2), as.numeric(test_class))
+roc.svm2 = performance(Prediction_svm2, "tpr", "fpr")
+#pdf('rplot9.pdf')
+plot(roc.svm2)
+```
+
+
+```{r}
+#calculer auc
+auc_ROCR <- performance(Prediction_svm2, measure = "auc")
+auc_ROCR <- auc_ROCR@y.values[[1]]
+print(auc_ROCR)
+```
+
+
+
+
+
+## ROC Curve
+
+
+```{r}
+# liste des predictions avec bagged trees et gradient boosting
+preds_list <- list(Pred2,Prediction_svm2)
+
+# liste des valeurs reels
+m <- length(preds_list)
+actuals_list <- rep(list(data_gb_test$class), m)
+
+# Plot the ROC curves
+pred <- prediction(preds_list, actuals_list)
+rocs <- performance(pred, "tpr", "fpr")
+plot(rocs, col = as.list(1:m), main = "Courbe de ROC sur l'ensemble test")
+legend(x = "bottomright", 
+       legend = c("Bagged Trees", "GBM"),
+       fill = 1:m)
+
+```
+
+
+
+
+
+
+
+
+
+
 
 
 # RESEAUX DE NEURONNE
@@ -813,6 +937,8 @@ confusionMatrix(data=as.factor(prediction_gb),as.factor(data_gb_test$class), pos
 library(Metrics)
 auc(actual = data_gb_test$class, predict_gb)
 ```
+
+
 ## ROC Curve
 
 
