@@ -506,7 +506,7 @@ gs[gs$err==min(gs$err),]
  
 ```{r}
 #Graphique avec en abscice le alpha et en ordonné les erreur 
-plot(gs$err,gs$alpha)
+plot(gs$alpha,gs$err)
 ```
 Nous pouvons réaliser la validation croisé avec la valeur 0.2 pour verifier le lambda
 ```{r}
