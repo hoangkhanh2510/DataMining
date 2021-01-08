@@ -25,7 +25,7 @@ library(rpart.plot) # Pour la représentation de l’arbre de décision
 library(ROCR)  # tracer la courbe de Roc
 library(Metrics) # calculer aire sous la courbe de Roc
 library(gbm) # gradient boosting
-library(tidyverse)
+#library(tidyverse)
 
 
 ```
@@ -33,8 +33,8 @@ library(tidyverse)
 
 ```{r}
 #setwd("/Users/hoangkhanhle/Desktop/School/Master 2/Data Mining/Projet/")
-#df=read.csv("Train_data.csv")
-df=read.csv("C:/Users/DELL/Desktop/Master SISE/Github/Ahpine/DataMining/Train_data.csv")
+df=read.csv("Train_data.csv")
+#df=read.csv("C:/Users/DELL/Desktop/Master SISE/Github/Ahpine/DataMining/Train_data.csv")
 ```
 
 #Analyse globale 
@@ -450,65 +450,71 @@ yTrain = as.matrix(data_train[,19])
 XTrain = as.matrix(data_train[,-19])
 yTest = as.matrix(data_test[,19])
 XTest = as.matrix(data_test[,-19])
+
+library(glmnet)
 ```
 
-###Test avec alpha = 0.5
+### test avec une serie de alpha 
+
 ```{r}
-# Elasticnet validation croisée
-cv.elnet <-cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=0.5)
-plot(cv.elnet)
+#creation une liste des hyperparametres
+gs <- list(alpha = seq(from=0.1, to=0.9, by = 0.1)) 
+#transformer gs en data frame grid
+gs=expand.grid(gs)
+gs
 ```
 
 ```{r}
-#lambda min (meilleur lamba)
-print(cv.elnet$lambda.min)
-#prédiction
-pred.elnet <-predict(cv.elnet,XTest,s=c(cv.elnet$lambda.min),type="class")
-print(table(pred.elnet))
-#taux d'erreur
-print(sum(data_test$class != pred.elnet)/nrow(data_test))
-```
-Le meilleur lamba est 0.001342274 avec un taux d'erreur de 6.8%
+#nombre de ligne de gs
+n=nrow(gs)
+#creation un vecteur de longueur n
+err=rep(0,n)
+#creation un vecteur de longueur n
+rappel=rep(0,n)
+#creation un vecteur de longueur n
+precision=rep(0,n)
+#Vecteur avec meilleur lamba
+lambda = rep(0,n)
 
-###Test avec alpha = 0.8
+# recherche de grille
+for (i in 1:n){
+  cv.elnet = cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=gs$alpha[i])
+  #lambda min
+  best_l = cv.elnet$lambda.min
+  #prédiction
+  pred.elnet = predict(cv.elnet,XTest,s=c(cv.elnet$lambda.min),type="class")
+  conf=table(data_test$class,pred.elnet)
+  e=1-sum(diag(conf))/sum(conf)
+  rap=conf[2,2]/sum(conf["normal",])
+  pre=conf[2,2]/sum(conf[,"normal"])
+  err[i]=e
+  rappel[i]=rap
+  precision[i]=pre
+  lambda[i] = best_l
+}
+
+#dataframe qui contient des erreurs, taux rappel et precision
+gs=cbind(cbind(cbind(gs,lambda,err),rappel), precision)
+print(gs)  
+```
 
 ```{r}
-#validation croisée
-cv.elnet2 <-cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=0.8)
+#Ligne avec le plus petit taux d'erreur 
+gs[gs$err==min(gs$err),]
+```
+ Le plus petit taux erreur (0.068) est avec un alpha 0.2 et lambda 0.0013. On peut le voir sur le graphique ci-dessous: 
+ 
+```{r}
+#Graphique avec en abscice le alpha et en ordonné les erreur 
+plot(gs$err,gs$alpha)
+```
+Nous pouvons réaliser la validation croisé avec la valeur 0.2 pour verifier le lambda
+```{r}
+cv.elnet2 <-cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=0.2)
+#Graphique
 plot(cv.elnet2)
-```
-
-```{r}
 #lambda min
 print(cv.elnet2$lambda.min)
-#prédiction
-pred.elnet2 <-predict(cv.elnet2,XTest,s=c(cv.elnet2$lambda.min),type="class")
-print(table(pred.elnet2))
-#taux d'erreur
-print(sum(data_test$class != pred.elnet2)/nrow(data_test))
-```
-
-### teste avec une serie de alpha 
-
-```{r}
-alpha <- seq(from=0.1, to=0.9, by = 0.1)
-result_tot = c()
-for (alpha_  in alpha){
-  print(alpha_)
-  cv.elnet <-cv.glmnet(XTrain,yTrain,family="binomial",type.measure="class",nfolds=10,alpha=alpha_)
-  #print(plot(cv.elnet))
-  #lambda min
-  lambda <- cv.elnet$lambda.min
-  #prédiction
-  pred.elnet <-predict(cv.elnet,XTest,s=c(cv.elnet$lambda.min),type="class")
-  #print(table(pred.elnet))
-  #taux d'erreur
-  te <- sum(data_test$class != pred.elnet)/nrow(data_test)
-  result = c(alpha_, lambda, te)
-  result_tot = append(result_tot, result)
-}
-print(result_tot)
-#La valeur d'alpha pour lequel le taux d'erreur est le plus faible est de 0.6 avec un lambade de 0.0013 et un taux d'erreur de 0.068
 ```
 
 
